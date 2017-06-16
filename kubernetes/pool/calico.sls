@@ -9,13 +9,20 @@
 copy-calico-ctl:
   dockerng.running:
     - image: {{ pool.network.calicoctl.image }}
+    - entrypoint: cat
+    - tty: True
+    - force: True
+    - require:
+        - file: /tmp/calico/
     {%- if grains.get('noservices') %}
     - onlyif: /bin/false
     {%- endif %}
 
 copy-calico-ctl-cmd:
-  cmd.run:
-    - name: docker cp copy-calico-ctl:calicoctl /tmp/calico/
+  dockerng.copy_from:
+    - name: copy-calico-ctl
+    - source: calicoctl
+    - dest: /tmp/calico/
     - require:
       - dockerng: copy-calico-ctl
     {%- if grains.get('noservices') %}
@@ -37,13 +44,20 @@ copy-calico-ctl-cmd:
 copy-calico-node:
   dockerng.running:
     - image: {{ pool.network.get('image', 'calico/node') }}
+    - entrypoint: cat
+    - tty: True
+    - force: True
+    - require:
+        - file: /tmp/calico/
     {%- if grains.get('noservices') %}
     - onlyif: /bin/false
     {%- endif %}
 
 copy-bird-cl-cmd:
-  cmd.run:
-    - name: docker cp copy-calico-node:/bin/birdcl /tmp/calico/
+  dockerng.copy_from:
+    - name: copy-calico-node
+    - source: /bin/birdcl
+    - dest: /tmp/calico/
     - require:
       - dockerng: copy-calico-node
     {%- if grains.get('noservices') %}
@@ -65,10 +79,22 @@ copy-bird-cl-cmd:
 copy-calico-cni:
   dockerng.running:
     - image: {{ pool.network.cni.image }}
-    - command: cp -vr /opt/cni/bin/ /tmp/calico/
-    - binds:
-      - /tmp/calico/:/tmp/calico/
+    - entrypoint: cat
+    - tty: True
     - force: True
+    - require:
+        - file: /tmp/calico/
+    {%- if grains.get('noservices') %}
+    - onlyif: /bin/false
+    {%- endif %}
+
+copy-calico-cni-cmd:
+  dockerng.copy_from:
+    - name: copy-calico-cni
+    - source: /opt/cni/bin/
+    - dest: /tmp/calico/
+    - require:
+      - dockerng: copy-calico-cni
     {%- if grains.get('noservices') %}
     - onlyif: /bin/false
     {%- endif %}
