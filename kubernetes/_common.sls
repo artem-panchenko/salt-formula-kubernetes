@@ -27,12 +27,20 @@ flannel-tar:
 hyperkube-copy:
   dockerng.running:
     - image: {{ common.hyperkube.image }}
-    - command: cp -v /hyperkube /tmp/hyperkube
-    - binds:
-      - /tmp/hyperkube/:/tmp/hyperkube/
+    - entrypoint: cat
+    - tty: True
     - force: True
     - require:
       - file: /tmp/hyperkube
+    {%- if grains.get('noservices') %}
+    - onlyif: /bin/false
+    {%- endif %}
+
+hyperkube-copy-cmd:
+  cmd.run:
+    - name: docker cp hyperkube-copy:/hyperkube /tmp/hyperkube
+    - require:
+      - dockerng: hyperkube-copy
     {%- if grains.get('noservices') %}
     - onlyif: /bin/false
     {%- endif %}
@@ -45,7 +53,7 @@ hyperkube-copy:
     - user: root
     - group: root
     - require:
-      - dockerng: hyperkube-copy
+      - cmd: hyperkube-copy-cmd
     {%- if grains.get('noservices') %}
     - onlyif: /bin/false
     {%- endif %}

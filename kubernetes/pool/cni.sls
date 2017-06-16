@@ -12,12 +12,20 @@
 copy-network-cni:
   dockerng.running:
     - image: {{ common.hyperkube.image }}
-    - command: cp -vr /opt/cni/bin/ /tmp/cni/
-    - binds:
-      - /tmp/cni/:/tmp/cni/
+    - entrypoint: cat
+    - tty: True
     - force: True
     - require:
         - file: /tmp/cni/
+    {%- if grains.get('noservices') %}
+    - onlyif: /bin/false
+    {%- endif %}
+
+copy-network-cni-cmd:
+  cmd.run:
+    - name: docker cp copy-network-cni:/opt/cni/bin/ /tmp/cni/
+    - require:
+      - dockerng: copy-network-cni
     {%- if grains.get('noservices') %}
     - onlyif: /bin/false
     {%- endif %}
@@ -33,7 +41,7 @@ copy-network-cni:
     - watch_in:
       - service: kubelet_service
     - require:
-      - dockerng: copy-network-cni
+      - cmd: copy-network-cni-cmd
     {%- if grains.get('noservices') %}
     - onlyif: /bin/false
     {%- endif %}
